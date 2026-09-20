@@ -5,6 +5,9 @@ import path from "path";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
+import workerRoutes from "./routes/workerRoutes.js";
+import clientRoutes from "./routes/clientRoutes.js";
+import rosterRoutes from "./routes/rosterRoutes.js";
 
 
 const app = express();
@@ -38,6 +41,10 @@ app.use("/api/profile", profileRoutes);
 
 // Admin-only user endpoints.
 app.use("/api/admin/users", adminUserRoutes);
+
+app.use("/api/workers", workerRoutes);
+app.use("/api/clients", clientRoutes);
+app.use("/api/roster", rosterRoutes);
 
 // Start listening for requests.
 app.listen(PORT, () => {
