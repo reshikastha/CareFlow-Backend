@@ -8,3 +8,23 @@ GET http://localhost:5000/api/profile
 PATCH http://localhost:5000/api/profile  update profile
 
 POST  http://localhost:5000/api/profile/compliance-documents
+
+GET http://localhost:5000/api/workers  Get all workers
+
+GET http://localhost:5000/api/workers/1  Get one worker
+
+PATCH http://localhost:5000/api/workers/1  Update a worker
+
+GET http://localhost:5000/api/clients Get clients
+
+POST http://localhost:5000/api/clients  Create a client
+
+PATCH http://localhost:5000/api/clients/1 Update a client
+
+POST  http://localhost:5000/api/clients/1/assign   Assign a client to a worker
+
+GET http://localhost:5000/api/roster   Roster endpoints
+
+POST http://localhost:5000/api/roster  Create a roster shift
+
+PATCH  http://localhost:5000/api/roster/1/status  Update care worker’s shift status
