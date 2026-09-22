@@ -246,3 +246,95 @@ export const assignClient = async (req, res) => {
     });
   }
 };
+
+
+/*
+ * SOFT DELETE CLIENT
+ * DELETE /api/clients/:clientId
+ *
+ * This will:
+ * 1. Make the client inactive.
+ * 2. End their active worker assignments.
+ * 3. Cancel their future scheduled shifts.
+ */
+export const deleteClient = async (req, res) => {
+  const clientId = Number(req.params.clientId);
+
+  if (!Number.isInteger(clientId) || clientId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid client ID.",
+    });
+  }
+
+  // Get one connection for the entire transaction.
+  const databaseClient = await pool.connect();
+
+  try {
+    await databaseClient.query("BEGIN");
+
+    // Mark the client as inactive instead of permanently deleting them.
+    const clientResult = await databaseClient.query(
+      `UPDATE clients
+       SET
+          is_active = FALSE,
+          updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+         AND is_active = TRUE
+       RETURNING id, full_name`,
+      [clientId],
+    );
+
+    if (clientResult.rows.length === 0) {
+      await databaseClient.query("ROLLBACK");
+
+      return res.status(404).json({
+        success: false,
+        message: "Active client not found.",
+      });
+    }
+
+    // End every active assignment for this client.
+    await databaseClient.query(
+      `UPDATE client_assignments
+       SET
+          is_active = FALSE,
+          ended_at = CURRENT_TIMESTAMP
+       WHERE client_id = $1
+         AND is_active = TRUE`,
+      [clientId],
+    );
+
+    // Cancel future shifts belonging to this client.
+    await databaseClient.query(
+      `UPDATE roster_shifts
+       SET
+          status = 'CANCELLED',
+          updated_at = CURRENT_TIMESTAMP
+       WHERE client_id = $1
+         AND shift_start > CURRENT_TIMESTAMP
+         AND status = 'SCHEDULED'`,
+      [clientId],
+    );
+
+    await databaseClient.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: "Client deleted successfully.",
+      client: clientResult.rows[0],
+    });
+  } catch (error) {
+    await databaseClient.query("ROLLBACK");
+
+    console.error("Delete client error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete the client.",
+    });
+  } finally {
+    // Return the connection to the PostgreSQL pool.
+    databaseClient.release();
+  }
+};

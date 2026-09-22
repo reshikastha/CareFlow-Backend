@@ -10,6 +10,7 @@ import {
   createClient,
   updateClient,
   assignClient,
+  deleteClient,
 } from "../controllers/clientController.js";
 
 const router = express.Router();
@@ -45,6 +46,13 @@ router.post(
   authenticateUser,
   authorizeRoles("ADMIN"),
   assignClient,
+);
+
+router.delete(
+  "/:clientId",
+  authenticateUser,
+  authorizeRoles("ADMIN"),
+  deleteClient,
 );
 
 export default router;
