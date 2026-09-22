@@ -30,3 +30,5 @@ POST http://localhost:5000/api/roster  Create a roster shift
 PATCH  http://localhost:5000/api/roster/1/status  Update care worker’s shift status
 
 DELETE /api/clients/:clientId delete client 
+
+DELETE /api/workers/:workerId   delete worker

@@ -201,3 +201,94 @@ export const updateWorker = async (req, res) => {
     });
   }
 };
+
+
+/*
+ * SOFT DELETE CARE WORKER
+ * DELETE /api/workers/:workerId
+ *
+ * This will:
+ * 1. Deactivate the worker's account.
+ * 2. End their active client assignments.
+ * 3. Cancel their future scheduled shifts.
+ */
+export const deleteWorker = async (req, res) => {
+  const workerId = Number(req.params.workerId);
+
+  if (!Number.isInteger(workerId) || workerId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid worker ID.",
+    });
+  }
+
+  // Use one database connection for the transaction.
+  const databaseClient = await pool.connect();
+
+  try {
+    await databaseClient.query("BEGIN");
+
+    // Deactivate only a CARE_WORKER account.
+    // An administrator cannot be deleted through this endpoint.
+    const workerResult = await databaseClient.query(
+      `UPDATE users
+       SET is_active = FALSE
+       WHERE id = $1
+         AND role = 'CARE_WORKER'
+         AND is_active = TRUE
+       RETURNING id, full_name, email`,
+      [workerId],
+    );
+
+    if (workerResult.rows.length === 0) {
+      await databaseClient.query("ROLLBACK");
+
+      return res.status(404).json({
+        success: false,
+        message: "Active care worker not found.",
+      });
+    }
+
+    // End all active client assignments for this worker.
+    await databaseClient.query(
+      `UPDATE client_assignments
+       SET
+          is_active = FALSE,
+          ended_at = CURRENT_TIMESTAMP
+       WHERE care_worker_id = $1
+         AND is_active = TRUE`,
+      [workerId],
+    );
+
+    // Cancel this worker's future scheduled shifts.
+    await databaseClient.query(
+      `UPDATE roster_shifts
+       SET
+          status = 'CANCELLED',
+          updated_at = CURRENT_TIMESTAMP
+       WHERE care_worker_id = $1
+         AND shift_start > CURRENT_TIMESTAMP
+         AND status = 'SCHEDULED'`,
+      [workerId],
+    );
+
+    await databaseClient.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: "Care worker deleted successfully.",
+      worker: workerResult.rows[0],
+    });
+  } catch (error) {
+    await databaseClient.query("ROLLBACK");
+
+    console.error("Delete worker error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete the care worker.",
+    });
+  } finally {
+    databaseClient.release();
+  }
+};

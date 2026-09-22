@@ -9,6 +9,7 @@ import {
   getWorkers,
   getWorkerById,
   updateWorker,
+  deleteWorker,
 } from "../controllers/workerController.js";
 
 const router = express.Router();
@@ -33,6 +34,13 @@ router.patch(
   authenticateUser,
   authorizeRoles("ADMIN"),
   updateWorker,
+);
+
+router.delete(
+  "/:workerId",
+  authenticateUser,
+  authorizeRoles("ADMIN"),
+  deleteWorker,
 );
 
 export default router;
