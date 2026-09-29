@@ -7,6 +7,7 @@ import {
 
 import {
   getClients,
+  getClient,
   createClient,
   updateClient,
   assignClient,
@@ -15,8 +16,6 @@ import {
 
 const router = express.Router();
 
-// Admin sees all clients.
-// Care worker only sees assigned clients.
 router.get(
   "/",
   authenticateUser,
@@ -24,7 +23,13 @@ router.get(
   getClients,
 );
 
-// Only admins can create clients.
+router.get(
+  "/:clientId",
+  authenticateUser,
+  authorizeRoles("ADMIN", "CARE_WORKER"),
+  getClient,
+);
+
 router.post(
   "/",
   authenticateUser,
@@ -32,7 +37,6 @@ router.post(
   createClient,
 );
 
-// Only admins can update clients.
 router.patch(
   "/:clientId",
   authenticateUser,
@@ -40,7 +44,6 @@ router.patch(
   updateClient,
 );
 
-// Assign a client to a care worker.
 router.post(
   "/:clientId/assign",
   authenticateUser,

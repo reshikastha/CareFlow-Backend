@@ -81,48 +81,16 @@ const INCIDENT_SELECT = `
  *   - they reported the incident; or
  *   - the client is actively assigned to them.
  */
-async function findIncidentForUser(
-  incidentId,
-  userId,
-  role,
-) {
-  const values = [incidentId];
-
-  let permissionCondition = "";
-
-  if (role !== "ADMIN") {
-    values.push(userId);
-
-    permissionCondition = `
-      AND (
-        i.worker_id = $2
-        OR i.reported_by_id = $2
-        OR EXISTS (
-          SELECT 1
-          FROM client_assignments ca
-          WHERE ca.client_id = i.client_id
-            AND ca.care_worker_id = $2
-            AND ca.ended_at IS NULL
-        )
-      )
-    `;
-  }
-
+async function findIncidentForUser(incidentId) {
   const result = await pool.query(
-    `
-      ${INCIDENT_SELECT}
-
-      WHERE i.id = $1
-        AND i.is_deleted = FALSE
-
-      ${permissionCondition}
-    `,
-    values,
+    `${INCIDENT_SELECT}
+     WHERE i.id = $1
+       AND i.is_deleted = FALSE`,
+    [incidentId],
   );
 
   return result.rows[0] ?? null;
 }
-
 /*
  * POST /api/incidents
  *
@@ -388,23 +356,23 @@ export async function getIncidents(req, res) {
      * Restrict care workers to incidents connected
      * to themselves or their assigned clients.
      */
-    if (role !== "ADMIN") {
-      values.push(userId);
+    // if (role !== "ADMIN") {
+    //   values.push(userId);
 
-      conditions.push(`
-        (
-          i.worker_id = $${values.length}
-          OR i.reported_by_id = $${values.length}
-          OR EXISTS (
-            SELECT 1
-            FROM client_assignments ca
-            WHERE ca.client_id = i.client_id
-              AND ca.care_worker_id = $${values.length}
-              AND ca.ended_at IS NULL
-          )
-        )
-      `);
-    }
+    //   conditions.push(`
+    //     (
+    //       i.worker_id = $${values.length}
+    //       OR i.reported_by_id = $${values.length}
+    //       OR EXISTS (
+    //         SELECT 1
+    //         FROM client_assignments ca
+    //         WHERE ca.client_id = i.client_id
+    //           AND ca.care_worker_id = $${values.length}
+    //           AND ca.ended_at IS NULL
+    //       )
+    //     )
+    //   `);
+    // }
 
     if (status) {
       const normalisedStatus =

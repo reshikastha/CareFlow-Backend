@@ -1,37 +1,18 @@
 import pool from "../config/database.js";
 
 /*
- * GET CLIENTS
- *
- * Admin: receives every active client.
- * Care worker: receives only assigned clients.
+/*
+ * GET /api/clients
+ * Admin and care workers see all active clients.
  */
 export const getClients = async (req, res) => {
   try {
-    let result;
-
-    if (req.user.role === "ADMIN") {
-      result = await pool.query(
-        `SELECT *
-         FROM clients
-         WHERE is_active = TRUE
-         ORDER BY full_name ASC`,
-      );
-    } else {
-      result = await pool.query(
-        `SELECT
-            c.*,
-            ca.assigned_at
-         FROM clients AS c
-         INNER JOIN client_assignments AS ca
-            ON ca.client_id = c.id
-         WHERE ca.care_worker_id = $1
-           AND ca.is_active = TRUE
-           AND c.is_active = TRUE
-         ORDER BY c.full_name ASC`,
-        [req.user.id],
-      );
-    }
+    const result = await pool.query(
+      `SELECT *
+       FROM clients
+       WHERE is_active = TRUE
+       ORDER BY full_name ASC`,
+    );
 
     return res.status(200).json({
       success: true,
@@ -49,9 +30,49 @@ export const getClients = async (req, res) => {
 };
 
 /*
- * CREATE CLIENT
- * Admin only.
+ * GET /api/clients/:clientId
+ * Admin and care workers can view any active client.
  */
+export const getClient = async (req, res) => {
+  try {
+    const clientId = Number(req.params.clientId);
+
+    if (!Number.isInteger(clientId) || clientId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid client ID.",
+      });
+    }
+
+    const result = await pool.query(
+      `SELECT *
+       FROM clients
+       WHERE id = $1
+         AND is_active = TRUE`,
+      [clientId],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Client not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      client: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Get client error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to retrieve the client.",
+    });
+  }
+};
+
 export const createClient = async (req, res) => {
   try {
     const {
