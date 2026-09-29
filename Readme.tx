@@ -32,3 +32,24 @@ PATCH  http://localhost:5000/api/roster/1/status  Update care worker’s shift s
 DELETE /api/clients/:clientId delete client 
 
 DELETE /api/workers/:workerId   delete worker
+
+POST http://localhost:5000/api/incidents  add the incidents
+
+GET http://localhost:5000/api/incidents   Get all incidents
+
+
+GET http://localhost:5000/api/incidents?status=OPEN
+GET http://localhost:5000/api/incidents?severity=HIGH
+GET http://localhost:5000/api/incidents?startDate=2026-09-01&endDate=2026-09-30
+
+GET http://localhost:5000/api/incidents?clientId=1  // incidents details
+
+GET http://localhost:5000/api/incidents/1  Get one incident
+
+PATCH http://localhost:5000/api/incidents/1  Update incident details
+
+PATCH http://localhost:5000/api/incidents/1/status   Change incident status
+
+GET http://localhost:5000/api/incidents/1/activities  Get activity timeline
+
+DELETE http://localhost:5000/api/incidents/1   Delete incident
