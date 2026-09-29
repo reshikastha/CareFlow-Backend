@@ -8,6 +8,7 @@ import adminUserRoutes from "./routes/adminUserRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import rosterRoutes from "./routes/rosterRoutes.js";
+import incidentRoutes from "./routes/incidentRoutes.js";
 
 
 const app = express();
@@ -45,6 +46,9 @@ app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/workers", workerRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/roster", rosterRoutes);
+
+// Incident endpoints
+app.use("/api/incidents", incidentRoutes);
 
 // Start listening for requests.
 app.listen(PORT, () => {
